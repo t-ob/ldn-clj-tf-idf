@@ -18,16 +18,41 @@
       (source ?label _ ?freq)
       (c/max ?freq :> ?max-freq)))
 
-;; It's possible to read-in multiple sources to a Cascalog query, and
-;; join on specific variables. Let's calculate, for each document, the
-;; ratio of each occurring word to the document's maximum word
-;; frequency.
-#_(let [source         articles
-        word-freqs     (document-word-frequencies source)
+(defn term-frequency
+  [source]
+  (let [word-freqs     (document-word-frequencies source)
         max-word-freqs (document-max-word-frequencies word-freqs)]
+    (<- [?label ?word ?term-frequency]
+        (word-freqs ?label ?word ?freq)
+        (max-word-freqs ?label ?max-freq)
+        (div ?freq ?max-freq :> ?term-frequency))))
+
+;; Now let's calculate the inverse document frequency score for each
+;; distinct word across all documents. The idf-score for a given word
+;; in a set of documents is equal to the ratio of the total number of
+;; documents to the number of documents containing the given word,
+;; taken to the log base 2.
+(defmapop [idf-ratio [total-docs]]
+  [freq]
+  (/ (Math/log (/ total-docs freq))
+     (Math/log 2)))
+
+#_(let [source [[1]
+                [2]
+                [3]]
+        n      (count source)]
     (?- (stdout)
-        (c/fixed-sample (<- [?label ?word ?term-frequency]
-                            (word-freqs ?label ?word ?freq)
-                            (max-word-freqs ?label ?max-freq)
-                            (div ?freq ?max-freq :> ?term-frequency))
-                        20)))
+        (<- [?x ?idf]
+            (source ?x)
+            (idf-ratio n ?x :> ?idf))))
+
+#_(let [source articles
+        n      6
+        word-freqs (document-word-frequencies source)]
+    (?- (stdout)
+        (c/fixed-sample (<- [?word ?inverse-document-frequency]
+                            (word-freqs _ ?word _)
+                            (c/count ?total-freq)
+                            (idf-ratio n ?total-freq :> ?inverse-document-frequency))
+                        10)))
+
