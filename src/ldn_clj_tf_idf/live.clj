@@ -8,7 +8,10 @@
 ;; three 1-tuples.
 #_(let [source [["Hello"]
                 ["London"]
-                ["Clojurians"]]]
+                ["Clojurians"]
+                ["and"]
+                ["Clojurians"]
+                ["worldwide"]]]
   (?- (stdout)
       (<- [?word]
           (source ?word))))
