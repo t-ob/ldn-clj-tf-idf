@@ -5,7 +5,7 @@
 #_(bootstrap-emacs)
 
 ;; Cascalog speaks in tuples; the input to this query is a sequence of
-;; three 1-tuples.
+;; six 1-tuples.
 #_(let [source [["Hello"]
                 ["London"]
                 ["Clojurians"]
