@@ -5,6 +5,12 @@
 #_(require '[cascalog.playground :refer :all])
 #_(bootstrap-emacs)
 
+(defn document-word-frequencies
+  [source]
+  (<- [?label ?word ?freq]
+      (source ?label ?word)
+      (c/count :> ?freq)))
+
 ;; The documents we'll be working with will be formatted as a
 ;; collection of 2-tuples; the first entry being the document label,
 ;; and the second being a word from the document. Each word in a
@@ -25,6 +31,4 @@
                 ["doc4" "and"]
                 ["doc4" "you"]]]
     (?- (stdout)
-        (<- [?label ?word ?freq]
-            (source ?label ?word)
-            (c/count :> ?freq))))
+        (document-word-frequencies source)))
