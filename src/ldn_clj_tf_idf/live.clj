@@ -1,5 +1,6 @@
 (ns ldn-clj-tf-idf.live
   (:require [ldn-clj-tf-idf.samples :refer [articles]]
+            [ldn-clj-tf-idf.text :as text]
             [cascalog.api :refer :all]
             [cascalog.ops :as c]))
 
@@ -44,18 +45,35 @@
   [tuples]
   (take n (sort-by last > tuples)))
 
-;; Let's now combine tf, idf and top-n to calculate the tf-idf scores
-;; for each document.
-#_(let [source     articles
-        total-docs 6
-        tf-in      (tf source)
-        idf-in     (idf total-docs source)]
-    (?- (stdout)
-        (<- [?label ?sorted-word ?sorted-tf-idf]
-            (tf-in ?label ?word ?term-frequency)
-            (idf-in ?word ?inverse-document-frequency)
-            (* ?term-frequency ?inverse-document-frequency :> ?tf-idf)
-            (top-n 10 ?word ?tf-idf :> ?sorted-word ?sorted-tf-idf))))
+(defn tf-idf [total-docs source]
+  (let [tf-in  (tf source)
+        idf-in (idf total-docs source)]
+    (<- [?label ?sorted-word ?sorted-tf-idf]
+        (tf-in ?label ?word ?term-frequency)
+        (idf-in ?word ?inverse-document-frequency)
+        (* ?term-frequency ?inverse-document-frequency :> ?tf-idf)
+        (top-n 10 ?word ?tf-idf :> ?sorted-word ?sorted-tf-idf))))
 
+;; Let's see what we can learn from some classic texts on Project
+;; Gutenberg.
+(def texts
+  [["dracula" "/Users/tomobrien/Downloads/gutenberg/dracula.txt"]
+   ["alice" "/Users/tomobrien/Downloads/gutenberg/alice.txt"]
+   ["frankenstein" "/Users/tomobrien/Downloads/gutenberg/frankenstein.txt"]
+   ["sherlock" "/Users/tomobrien/Downloads/gutenberg/sherlock.txt"]
+   ["oz" "/Users/tomobrien/Downloads/gutenberg/oz.txt"]])
 
+(defn source-text [name path]
+  (<- [?label ?word]
+      (identity name :> ?label)
+      ((lfs-textline path) ?line)
+      (text/parse-line ?line :> ?parsed-line)
+      (text/split-line ?parsed-line :> ?word)))
 
+;; Combine is a built-in Cascalog operation which takes an arbitrary
+;; number of sources and combines them if it can.
+#_(let [source (apply combine
+                    (for [[label path] texts]
+                      (source-text label path)))]
+  (?- (stdout)
+      (tf-idf (count texts) source)))

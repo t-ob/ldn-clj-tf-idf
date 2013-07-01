@@ -3,7 +3,7 @@
             [clojure.string :as str]))
 
 (def stopwords
-  #{"a" "is" "of" "i" "the" "this" "you" "off" "ok" "should" "dont" "your" "youre" "on" "to" "but" "his" "it" "all" "him" "her" "more" "let" "us" "im" "me" "cant" "he" "she" "in" "my" "as" "not" "be" "at" "if" "so" "was" "and" "had" "that" "mr" "dr" "mrs" "ms" "did"})
+  #{"a" "is" "of" "i" "the" "this" "you" "off" "ok" "should" "dont" "your" "youre" "on" "to" "but" "his" "it" "all" "him" "her" "more" "let" "us" "im" "me" "cant" "he" "she" "in" "my" "as" "not" "be" "at" "if" "so" "was" "and" "had" "that" "mr" "dr" "mrs" "ms" "did" "for" "which" "with" "they"})
 
 (defn remove-stopwords [line]
   (str/replace line
