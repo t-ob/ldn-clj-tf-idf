@@ -40,30 +40,22 @@
         (c/count ?total-freq)
         (idf-ratio total-docs ?total-freq :> ?inverse-document-frequency))))
 
-;; As well as providing several built-in aggregators, it's possible to
-;; create your own using defbufferop, defaggregateop, defparallelagg
-;; and defparallelbuf. Let's calculate the top-n values per group of a
-;; set of tuples whose last entry has a numeric value.
 (defbufferop [top-n [n]]
   [tuples]
   (take n (sort-by last > tuples)))
 
-#_(let [source [["a" 1]
-                ["a" 7]
-                ["a" 2]
-                ["a" 8]
-                ["b" 9]
-                ["b" 9]
-                ["b" 7]
-                ["b" 3]
-                ["c" 2]
-                ["c" 3]
-                ["c" 1]
-                ["c" 0]]]
+;; Let's now combine tf, idf and top-n to calculate the tf-idf scores
+;; for each document.
+#_(let [source     articles
+        total-docs 6
+        tf-in      (tf source)
+        idf-in     (idf total-docs source)]
     (?- (stdout)
-        (<- [?x ?sorted-y]
-            (source ?x ?y)
-            (top-n 2 ?y :> ?sorted-y))))
+        (<- [?label ?sorted-word ?sorted-tf-idf]
+            (tf-in ?label ?word ?term-frequency)
+            (idf-in ?word ?inverse-document-frequency)
+            (* ?term-frequency ?inverse-document-frequency :> ?tf-idf)
+            (top-n 10 ?word ?tf-idf :> ?sorted-word ?sorted-tf-idf))))
 
 
 
