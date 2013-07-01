@@ -18,7 +18,7 @@
       (source ?label _ ?freq)
       (c/max ?freq :> ?max-freq)))
 
-(defn term-frequency
+(defn tf
   [source]
   (let [word-freqs     (document-word-frequencies source)
         max-word-freqs (document-max-word-frequencies word-freqs)]
@@ -27,32 +27,43 @@
         (max-word-freqs ?label ?max-freq)
         (div ?freq ?max-freq :> ?term-frequency))))
 
-;; Now let's calculate the inverse document frequency score for each
-;; distinct word across all documents. The idf-score for a given word
-;; in a set of documents is equal to the ratio of the total number of
-;; documents to the number of documents containing the given word,
-;; taken to the log base 2.
 (defmapop [idf-ratio [total-docs]]
   [freq]
   (/ (Math/log (/ total-docs freq))
      (Math/log 2)))
 
-#_(let [source [[1]
-                [2]
-                [3]]
-        n      (count source)]
-    (?- (stdout)
-        (<- [?x ?idf]
-            (source ?x)
-            (idf-ratio n ?x :> ?idf))))
+(defn idf
+  [total-docs source]
+  (let [word-freqs (document-word-frequencies source)]
+    (<- [?word ?inverse-document-frequency]
+        (word-freqs _ ?word _)
+        (c/count ?total-freq)
+        (idf-ratio total-docs ?total-freq :> ?inverse-document-frequency))))
 
-#_(let [source articles
-        n      6
-        word-freqs (document-word-frequencies source)]
+;; As well as providing several built-in aggregators, it's possible to
+;; create your own using defbufferop, defaggregateop, defparallelagg
+;; and defparallelbuf. Let's calculate the top-n values per group of a
+;; set of tuples whose last entry has a numeric value.
+(defbufferop [top-n [n]]
+  [tuples]
+  (take n (sort-by last > tuples)))
+
+#_(let [source [["a" 1]
+                ["a" 7]
+                ["a" 2]
+                ["a" 8]
+                ["b" 9]
+                ["b" 9]
+                ["b" 7]
+                ["b" 3]
+                ["c" 2]
+                ["c" 3]
+                ["c" 1]
+                ["c" 0]]]
     (?- (stdout)
-        (c/fixed-sample (<- [?word ?inverse-document-frequency]
-                            (word-freqs _ ?word _)
-                            (c/count ?total-freq)
-                            (idf-ratio n ?total-freq :> ?inverse-document-frequency))
-                        10)))
+        (<- [?x ?sorted-y]
+            (source ?x ?y)
+            (top-n 2 ?y :> ?sorted-y))))
+
+
 
